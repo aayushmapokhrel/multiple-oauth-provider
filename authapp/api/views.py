@@ -3,7 +3,13 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.contrib.auth import authenticate
 from authapp.models import User, OAuthAccount
-from authapp.api.serializers import UserSerializer, OAuthAccountSerializer, LoginActivitySerializer
+from authapp.api.serializers import (
+    UserSerializer,
+    OAuthAccountSerializer,
+    LoginActivitySerializer,
+    SignupSerializer,
+    LoginSerializer,
+)
 from authapp.utils import send_verification_email, send_otp
 
 
@@ -13,29 +19,37 @@ class UserViewSet(ModelViewSet):
 
     @action(detail=False, methods=["post"])
     def signup(self, request):
-        user = User.objects.create_user(
-            username=request.data["email"],
-            email=request.data["email"],
-            password=request.data["password"],
-        )
+        serializer = SignupSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()
         send_verification_email(user)
         return Response({"status": "verification_sent"})
 
     @action(detail=False, methods=["post"])
     def verify(self, request):
-        # Accept token, mark verified
-        u = User.objects.get(email=request.data["email"])
-        u.email_verified = True
-        u.save()
+        email = request.data.get("email")
+        user = User.objects.filter(email=email).first()  # safer than get()
+        if not user:
+            return Response({"status": "user not found"}, status=404)
+
+        user.email_verified = True
+        user.save()
         return Response({"status": "verified"})
 
     @action(detail=False, methods=["post"])
     def login(self, request):
-        user = authenticate(
-            username=request.data["email"], password=request.data["password"]
-        )
+        serializer = LoginSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        email = serializer.validated_data["email"]
+        password = serializer.validated_data["password"]
+
+        user = authenticate(username=email, password=password)
         if not user:
-            return Response({"error": "invalid"}, status=400)
+            return Response({"error": "invalid credentials"}, status=400)
+
+        if not user.email_verified:
+            return Response({"error": "email not verified"}, status=400)
 
         if user.two_factor_enabled:
             otp = send_otp(user)
