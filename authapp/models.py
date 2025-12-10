@@ -20,10 +20,9 @@ class OAuthAccount(models.Model):
     )
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="oauth")
     provider = models.CharField(max_length=20, choices=PROVIDERS)
-    uid = models.CharField(max_length=200)
 
     class Meta:
-        unique_together = ("provider", "uid")
+        unique_together = ("provider", "id")
 
 
 class BackupCode(models.Model):
