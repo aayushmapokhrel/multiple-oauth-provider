@@ -1,8 +1,10 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
+import uuid
 
 
 class User(AbstractUser):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     email_verified = models.BooleanField(default=False)
     two_factor_enabled = models.BooleanField(default=False)
     last_ip = models.GenericIPAddressField(null=True, blank=True)
@@ -10,6 +12,7 @@ class User(AbstractUser):
 
 
 class OAuthAccount(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     PROVIDERS = (
         ("google", "google"),
         ("facebook", "facebook"),
@@ -24,11 +27,13 @@ class OAuthAccount(models.Model):
 
 
 class BackupCode(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     code = models.CharField(max_length=20)
 
 
 class LoginActivity(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     device = models.CharField(max_length=200)
     ip = models.GenericIPAddressField()
