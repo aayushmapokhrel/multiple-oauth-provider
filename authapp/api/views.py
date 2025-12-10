@@ -72,6 +72,5 @@ class OAuthViewSet(ModelViewSet):
         obj = OAuthAccount.objects.create(
             user_id=request.data["user"],
             provider=request.data["provider"],
-            uid=request.data["uid"],
         )
         return Response(OAuthAccountSerializer(obj).data)
