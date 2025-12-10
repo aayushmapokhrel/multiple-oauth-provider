@@ -7,6 +7,21 @@ class UserSerializer(serializers.ModelSerializer):
         model = User
         fields = ["id", "username", "email", "email_verified", "two_factor_enabled"]
 
+    def validate_email(self, value):
+        # If user is updating their own email, allow same value
+        request = self.context.get("request")
+
+        if request and request.method in ("PUT", "PATCH"):
+            current_user = request.user
+            if current_user and current_user.email == value:
+                return value
+
+        # Unique email check
+        if User.objects.filter(email=value).exists():
+            raise serializers.ValidationError("Email is already registered.")
+
+        return value
+
 
 class OAuthAccountSerializer(serializers.ModelSerializer):
     class Meta:
